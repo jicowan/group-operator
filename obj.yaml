@@ -1,0 +1,6 @@
+apiVersion: jicomusic.com/v1
+kind: IAMGroup
+metadata:
+   name: immersion-day-students
+spec:
+   groupName: ImmersionDay_Students

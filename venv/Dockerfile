@@ -1,0 +1,4 @@
+FROM python:3.7
+ADD . /src
+RUN pip install kopf kubernetes boto3
+CMD kopf run /src/group_members.py --verbose

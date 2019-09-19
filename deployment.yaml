@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: group-operator
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      application: group-operator
+  template:
+    metadata:
+      labels:
+        application: group-operator
+    spec:
+      serviceAccountName: iamreader
+      containers:
+      - name: kopf-operator
+        image: 820537372947.dkr.ecr.us-east-1.amazonaws.com/kopf-operator
