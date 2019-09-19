@@ -12,13 +12,19 @@ def create_fn(meta, spec, namespace, logger, **kwargs):
 
     name = meta.get('name')
     group_name = spec.get('groupName')
+    rbac_role = spec.get('rbacRole')
+
     if not group_name:
         raise kopf.PermanentError(f"groupName must be set. Got {group_name!r}.")
 
     users_arns = get_group_membership(group_name)
-    configmap_data = create_patch(users_arns)
-    configmap_obj = create_configmap_object(configmap_data)
-    api = kubernetes.client.CoreV1Api()
+    if type(users_arns) is Exception:
+        raise Exception("The group does not exist or the group membership is null.")
+        exit()
+    else:
+        configmap_data = create_patch(users_arns, rbac_role)
+        configmap_obj = create_configmap_object(configmap_data)
+        api = kubernetes.client.CoreV1Api()
 
     try:
         api.patch_namespaced_config_map(name="aws-auth", namespace="kube-system", body=configmap_obj)
@@ -44,8 +50,8 @@ def create_configmap_object(configmap_data):
     )
     return configmap
 
-def create_patch(user_arns):
+def create_patch(user_arns, rbac_role):
     configmap_data = []
     for user_arn in user_arns:
-        configmap_data.append("- groups:\n  - system:masters\n  userarn: " + user_arn + "\n  username: " + user_arn[str(user_arn).find("/") + 1:len(str(user_arn))] + "\n")
+        configmap_data.append("- groups:\n  - " + rbac_role + "\n  userarn: " + user_arn + "\n  username: " + user_arn[str(user_arn).find("/") + 1:len(str(user_arn))] + "\n")
     return {'mapUsers': ''.join(configmap_data)}

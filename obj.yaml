@@ -4,3 +4,4 @@ metadata:
    name: immersion-day-students
 spec:
    groupName: ImmersionDay_Students
+   rbacRole: system:masters

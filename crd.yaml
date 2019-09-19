@@ -20,3 +20,5 @@ spec:
        properties:
          groupName:
            type: string
+         rbacRole:
+           type: string
