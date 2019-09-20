@@ -1,11 +1,9 @@
-import kubernetes
 from kubernetes import client
-import yaml
 import kopf
-import os
 import boto3
 from botocore import errorfactory
 iam = boto3.client('iam')
+api = client.CoreV1Api()
 
 @kopf.on.create('jicomusic.com', 'v1', 'iamgroups')
 def create_fn(meta, spec, namespace, logger, **kwargs):
@@ -16,20 +14,32 @@ def create_fn(meta, spec, namespace, logger, **kwargs):
 
     if not group_name:
         raise kopf.PermanentError(f"groupName must be set. Got {group_name!r}.")
+    if not rbac_role:
+        raise kopf.PermanentError(f"rbacRole must be set. Got {rbac_role!r}.")
 
     users_arns = get_group_membership(group_name)
     if type(users_arns) is Exception:
         raise Exception("The group does not exist or the group membership is null.")
-        exit()
     else:
-        configmap_data = create_patch(users_arns, rbac_role)
+        aws_auth_users = get_aws_auth_users()
+        if aws_auth_users != None:
+            configmap_data = create_patch(users_arns, rbac_role, data=aws_auth_users)
+        else:
+            configmap_data = create_patch(users_arns, rbac_role)
         configmap_obj = create_configmap_object(configmap_data)
-        api = kubernetes.client.CoreV1Api()
 
     try:
         api.patch_namespaced_config_map(name="aws-auth", namespace="kube-system", body=configmap_obj)
     except ApiException as e:
         print("Exception when calling CoreV1API->patch_namespaced_config_map: %s\n" % e)
+
+def get_aws_auth_users():
+    configmap_data = api.read_namespaced_config_map(pretty=True, namespace="kube-system", name="aws-auth").data
+    if 'mapUsers' not in configmap_data:
+        return
+    else:
+        aws_auth_users = configmap_data['mapUsers']
+        return aws_auth_users
 
 def get_group_membership(group_name):
     try:
@@ -50,8 +60,11 @@ def create_configmap_object(configmap_data):
     )
     return configmap
 
-def create_patch(user_arns, rbac_role):
+def create_patch(user_arns, rbac_role, data=""):
     configmap_data = []
     for user_arn in user_arns:
         configmap_data.append("- groups:\n  - " + rbac_role + "\n  userarn: " + user_arn + "\n  username: " + user_arn[str(user_arn).find("/") + 1:len(str(user_arn))] + "\n")
-    return {'mapUsers': ''.join(configmap_data)}
+    if data != "":
+        return {'mapUsers': ''.join(configmap_data) + data}
+    else:
+        return {'mapUsers': ''.join(configmap_data)}
