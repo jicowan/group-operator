@@ -5,6 +5,18 @@ from botocore import errorfactory
 iam = boto3.client('iam')
 api = client.CoreV1Api()
 
+@kopf.on.delete('jicomusic.com', 'v1', 'iamgroups')
+def delete_fn(meta, spec, namespace, logger, **kwargs):
+    group_name = spec.get('groupName')
+    aws_auth_users = get_aws_auth_users()
+    user_arns = get_group_membership(group_name)
+    configmap_data = remove_users(aws_auth_users,user_arns)
+    configmap_obj = create_configmap_object(configmap_data)
+    try:
+        api.patch_namespaced_config_map(name="aws-auth", namespace="kube-system", body=configmap_obj)
+    except ApiException as e:
+        print("Exception when calling CoreV1API->patch_namespaced_config_map: %s\n" % e)
+
 @kopf.on.create('jicomusic.com', 'v1', 'iamgroups')
 def create_fn(meta, spec, namespace, logger, **kwargs):
 
@@ -68,3 +80,14 @@ def create_patch(user_arns, rbac_role, data=""):
         return {'mapUsers': ''.join(configmap_data) + data}
     else:
         return {'mapUsers': ''.join(configmap_data)}
+
+def remove_users(aws_auth_users, user_arns):
+    users = yaml.safe_load(aws_auth_users)
+    for user_arn in user_arns:
+        for idx, val in enumerate(users):
+            if val['userarn'] == user_arn:
+                users.pop(idx)
+                break
+        else:
+            print('User not found')
+    return(yaml.safe_dump(users))
