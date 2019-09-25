@@ -1,6 +1,8 @@
 from kubernetes import client
+from kubernetes.client.rest import ApiException
 import kopf
 import boto3
+import yaml
 from botocore import errorfactory
 iam = boto3.client('iam')
 api = client.CoreV1Api()
@@ -10,12 +12,21 @@ def delete_fn(meta, spec, namespace, logger, **kwargs):
     group_name = spec.get('groupName')
     aws_auth_users = get_aws_auth_users()
     user_arns = get_group_membership(group_name)
-    configmap_data = remove_users(aws_auth_users,user_arns)
-    configmap_obj = create_configmap_object(configmap_data)
-    try:
-        api.patch_namespaced_config_map(name="aws-auth", namespace="kube-system", body=configmap_obj)
-    except ApiException as e:
-        print("Exception when calling CoreV1API->patch_namespaced_config_map: %s\n" % e)
+    configmap_data = remove_users(aws_auth_users, user_arns)
+    if configmap_data['mapUsers'] != "[]\n":
+        configmap_obj = create_configmap_object(configmap_data)
+        try:
+            api.patch_namespaced_config_map(name="aws-auth", namespace="kube-system", body=configmap_obj)
+        except ApiException as e:
+            print("Exception when calling CoreV1API->patch_namespaced_config_map: %s\n" % e)
+    else:
+        configmap_data = api.read_namespaced_config_map(pretty=True, namespace="kube-system", name="aws-auth").data
+        configmap_data.pop('mapUsers')
+        configmap_obj = create_configmap_object(configmap_data)
+        try:
+            api.replace_namespaced_config_map(name='aws-auth', namespace='kube-system', body=configmap_obj)
+        except ApiException as e:
+            print("Exception when calling CoreV1API->replace_namespaced_config_map: %s\n" % e)
 
 @kopf.on.create('jicomusic.com', 'v1', 'iamgroups')
 def create_fn(meta, spec, namespace, logger, **kwargs):
@@ -65,7 +76,7 @@ def get_group_membership(group_name):
 
 def create_configmap_object(configmap_data):
     configmap = client.V1ConfigMap(
-        api_version="core/v1",
+        api_version="v1",
         kind="ConfigMap",
         metadata=client.V1ObjectMeta(name="aws-auth"),
         data=configmap_data
@@ -90,4 +101,4 @@ def remove_users(aws_auth_users, user_arns):
                 break
         else:
             print('User not found')
-    return(yaml.safe_dump(users))
+    return {'mapUsers': yaml.safe_dump(users)}
