@@ -54,7 +54,7 @@ spec:
 
 ### Deploying the operator
 The `deployment.yaml` manifest in this repository references a `serviceAccountName` that has to be set to the service 
-account created in the [Creating an IAM role and service account](#Creating a IAM role and service account) step above.  
+account created in the [Creating an IAM role and service account](https://github.com/jicowan/group-operator/blob/master/README.md#creating-a-iam-role-and-service-account) step above.  
 Once that's done, the operator can be deployed by running: 
 
 ```bash
