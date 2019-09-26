@@ -1,7 +1,7 @@
 apiVersion: jicomusic.com/v1
 kind: IAMGroup
 metadata:
-   name: immersion-day-students
+  name: newgroup
 spec:
-   groupName: ImmersionDay_Students
-   rbacRole: system:masters
+  groupName: newgroup
+  rbacRole: system:masters

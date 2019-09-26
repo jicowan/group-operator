@@ -19,7 +19,6 @@ rules:
     resources: [customresourcedefinitions]
     verbs: [list, get]
 
-  # Application: read-only access for watching cluster-wide.
   - apiGroups: [jicomusic.com]
     resources: [iamgroups]
     verbs: ['*']
