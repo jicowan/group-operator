@@ -16,8 +16,11 @@ Roles for Service Accounts (IRSA) feature for EKS which requires Kubernetes v1.1
 running the following command: 
 
 ```bash
-insert commands here
+eksctl create iamserviceaccount --cluster=<clusterName> --name=iamreader --namespace=default --attach-policy-arn=<policyARN>
 ```
+
+Use the ARN of the `IAMReadOnlyAccess` AWS managed policy when creating the service account or scope the policy to only 
+allow the service account to list the members of an IAM group. 
 
 ### Creating the RBAC roles
 In addition to calling IAM API, the operator calls several Kubernetes APIs.  For example, the operator reads iamgroup 
