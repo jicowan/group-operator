@@ -16,5 +16,5 @@ spec:
     spec:
       serviceAccountName: iamreader
       containers:
-      - name: kopf-operator
-        image: 820537372947.dkr.ecr.us-east-1.amazonaws.com/kopf-operator
+      - name: iamgroup-operator
+        image: jicowan/iamgroup-operator:v0.1
