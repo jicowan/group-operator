@@ -1,24 +1,24 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-   name: iamgroups.jicomusic.com
+  name: iamgroups.jicomusic.com
 spec:
-   scope: Namespaced
-   group: jicomusic.com
-   versions:
-     - name: v1
-       served: true
-       storage: true
-   names:
-     kind: IAMGroup
-     plural: iamgroups
-     singular: iamgroup
-   #preserveUnknownFields: false
-   validation:
-     openAPIV3Schema:
-       type: object
-       properties:
-         groupName:
-           type: string
-         rbacRole:
-           type: string
+  scope: Namespaced
+  group: jicomusic.com
+  versions:
+    - name: v1
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            groupName:
+              type: string
+            rbacRole:
+              type: string
+      served: true
+      storage: true
+  names:
+    kind: IAMGroup
+    listKind: IAMGroupList
+    singular: iamgroup
+    plural: iamgroups
